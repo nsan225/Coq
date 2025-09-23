@@ -1,1 +1,53 @@
+const int ldrPin = A0;      // entrée capteur luminosité
+const int motorPin1 = 9;    // moteur sens 1
+const int motorPin2 = 10;   // moteur sens 2
 
+unsigned long luminosityStartTime = 0;
+bool luminosityAboveThreshold = false;
+
+void setup() {
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int ldrValue = analogRead(ldrPin);       // lecture capteur (0-1023)
+  int luminosity = map(ldrValue, 0, 1023, 0, 100); // conversion en %
+
+  Serial.print("Luminosité : ");
+  Serial.print(luminosity);
+  Serial.println("%");
+
+  // Vérifie si la luminosité est > 20 %
+  if (luminosity > 20) {
+    // si c’est la première fois qu’on dépasse 20%, on démarre un chrono
+    if (!luminosityAboveThreshold) {
+      luminosityAboveThreshold = true;
+      luminosityStartTime = millis();
+    }
+
+    // si on est au-dessus du seuil depuis + d’1 minute (60000 ms)
+    if (millis() - luminosityStartTime >= 60000) {
+      tournerAvant();
+    }
+  } else {
+    // si la luminosité redescend sous 20%
+    luminosityAboveThreshold = false;
+    tournerArriere();
+  }
+
+  delay(500); // petite pause
+}
+
+void tournerAvant() {
+  digitalWrite(motorPin1, HIGH);
+  digitalWrite(motorPin2, LOW);
+  Serial.println("Moteur AVANT");
+}
+
+void tournerArriere() {
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, HIGH);
+  Serial.println("Moteur ARRIERE");
+}
