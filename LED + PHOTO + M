@@ -1,7 +1,9 @@
 #define borneENA        10      // On associe la borne "ENA" du L298N à la pin D10 de l'arduino
 #define borneIN1        9       // On associe la borne "IN1" du L298N à la pin D9 de l'arduino
 #define borneIN2        8       // On associe la borne "IN2" du L298N à la pin D8 de l'arduino
-
+const int ldr = A0;    // Broche de la photorésistance
+const int ledV = 3;    // LED verte
+const int ledR = 2;    // LED rouge
 
 
 void setup() {
@@ -10,6 +12,10 @@ void setup() {
   pinMode(borneENA, OUTPUT);
   pinMode(borneIN1, OUTPUT);
   pinMode(borneIN2, OUTPUT);
+  pinMode(ledV, OUTPUT);
+  pinMode(ledR, OUTPUT);
+  pinMode(ldr, INPUT);
+  Serial.begin(9600);
 }
 
 //**************************//
@@ -21,15 +27,36 @@ void loop() {
   digitalWrite(borneIN1, HIGH);                 // L'entrée IN1 doit être au niveau haut
   digitalWrite(borneIN2, LOW);                  // L'entrée IN2 doit être au niveau bas
 
-  
+  // Et on lance le moteur (branché sur le pont A du L298N)
+  lancerRotationMoteurPontA();
 
   // Puis on configure le L298N en "marche arrière", pour le moteur câblé sur le pont A. Selon sa table de vérité, il faut que :
   digitalWrite(borneIN1, LOW);                  // L'entrée IN1 doit être au niveau bas
   digitalWrite(borneIN2, HIGH);                 // L'entrée IN2 doit être au niveau haut
 
+  // Et on relance le moteur (branché sur le pont A du L298N)
+  lancerRotationMoteurPontA();
   
   // Puis... on boucle à l'infini !
+  // Lecture de la luminosité (0 à 1023)
+  int ldrValue = analogRead(ldr);
+  // Affichage de la valeur dans le moniteur série
+  //Serial.println(ldrValue);
+  int luminosite = map(ldrValue, 0, 1023, 0, 100);
+  // Seuil pour décider quelle LED allumer
+  if (luminosite > 45) {
+    // Faible luminosité → LED rouge
+    digitalWrite(ledR, HIGH);
+    digitalWrite(ledV, LOW);
+  } else {
+    // Luminosité forte → LED verte
+    digitalWrite(ledR, LOW);
+    digitalWrite(ledV, HIGH);
+  }
+  Serial.println(luminosite);
+  delay(100); // Petit délai pour stabiliser la lecture
 }
+
 
 
 //************************************************************************************//
