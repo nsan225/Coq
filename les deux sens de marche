@@ -1,0 +1,64 @@
+const int ldrPin = A0;      // entrée capteur luminosité
+const int motorPin1 = 9;    // moteur sens 1
+const int motorPin2 = 10;   // moteur sens 2
+
+unsigned long luminosityStartTime = 0;
+bool stateHigh = false;   // vrai si au-dessus du seuil
+bool timerRunning = false;
+bool firstRun = true;     // pour savoir si on démarre
+
+void setup() {
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int ldrValue = analogRead(ldrPin);       // lecture capteur (0-1023)
+  int luminosity = map(ldrValue, 0, 1023, 0, 100); // conversion en %
+
+  Serial.print("Luminosité : ");
+  Serial.print(luminosity);
+  Serial.println("%");
+
+  // --- Cas luminosité > 20%
+  if (luminosity > 20) {
+    if (!stateHigh || firstRun) { // si on vient de passer au-dessus ou au tout début
+      stateHigh = true;
+      firstRun = false;
+      luminosityStartTime = millis(); // démarre le minuteur
+      timerRunning = true;
+    }
+    if (timerRunning && millis() - luminosityStartTime >= 6000) {
+      tournerAvant();
+      timerRunning = false;
+    }
+  }
+  // --- Cas luminosité <= 20%
+  else {
+    if (stateHigh || firstRun) { // si on vient de passer en dessous ou au tout début
+      stateHigh = false;
+      firstRun = false;
+      luminosityStartTime = millis(); // démarre le minuteur
+      timerRunning = true;
+    }
+    if (timerRunning && millis() - luminosityStartTime >= 6000) {
+      tournerArriere();
+      timerRunning = false;
+    }
+  }
+
+  delay(500); // petite pause
+}
+
+void tournerAvant() {
+  digitalWrite(motorPin1, HIGH);
+  digitalWrite(motorPin2, LOW);
+  Serial.println("Moteur AVANT");
+}
+
+void tournerArriere() {
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, HIGH);
+  Serial.println("Moteur ARRIERE");
+}
